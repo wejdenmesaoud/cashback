@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CaseCashBack API Tester</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .section {
+            flex: 1;
+            min-width: 300px;
+            margin: 10px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .response {
+            margin-top: 15px;
+            min-height: 100px;
+        }
+    </style>
+</head>
+<body>
+    <h1>CaseCashBack API Tester</h1>
+    
+    <div class="container">
+        <!-- Authentication Section -->
+        <div class="section">
+            <h2>Authentication</h2>
+            
+            <div class="form-group">
+                <label for="auth-action">Action:</label>
+                <select id="auth-action">
+                    <option value="signup">Sign Up</option>
+                    <option value="signin">Sign In</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="auth-username">Username:</label>
+                <input type="text" id="auth-username" value="admin">
+            </div>
+            
+            <div class="form-group">
+                <label for="auth-email">Email:</label>
+                <input type="email" id="auth-email" value="admin@test.com">
+            </div>
+            
+            <div class="form-group">
+                <label for="auth-password">Password:</label>
+                <input type="password" id="auth-password" value="password123">
+            </div>
+            
+            <div class="form-group">
+                <label for="auth-role">Role:</label>
+                <select id="auth-role">
+                    <option value="user">User</option>
+                    <option value="mod">Moderator</option>
+                    <option value="admin" selected>Admin</option>
+                </select>
+            </div>
+            
+            <button onclick="authenticate()">Submit</button>
+            
+            <div class="response">
+                <pre id="auth-response"></pre>
+            </div>
+        </div>
+        
+        <!-- Teams Section -->
+        <div class="section">
+            <h2>Teams</h2>
+            
+            <div class="form-group">
+                <label for="team-action">Action:</label>
+                <select id="team-action">
+                    <option value="create">Create Team</option>
+                    <option value="getAll">Get All Teams</option>
+                    <option value="getById">Get Team by ID</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="team-id">Team ID (for Get):</label>
+                <input type="number" id="team-id" value="1">
+            </div>
+            
+            <div class="form-group">
+                <label for="team-name">Team Name (for Create):</label>
+                <input type="text" id="team-name" value="Support Team A">
+            </div>
+            
+            <button onclick="handleTeam()">Submit</button>
+            
+            <div class="response">
+                <pre id="team-response"></pre>
+            </div>
+        </div>
+        
+        <!-- Engineers Section -->
+        <div class="section">
+            <h2>Engineers</h2>
+            
+            <div class="form-group">
+                <label for="engineer-action">Action:</label>
+                <select id="engineer-action">
+                    <option value="create">Create Engineer</option>
+                    <option value="getAll">Get All Engineers</option>
+                    <option value="getById">Get Engineer by ID</option>
+                    <option value="getByTeam">Get Engineers by Team</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="engineer-id">Engineer ID (for Get):</label>
+                <input type="number" id="engineer-id" value="1">
+            </div>
+            
+            <div class="form-group">
+                <label for="engineer-team-id">Team ID:</label>
+                <input type="number" id="engineer-team-id" value="1">
+            </div>
+            
+            <div class="form-group">
+                <label for="engineer-name">Full Name (for Create):</label>
+                <input type="text" id="engineer-name" value="John Doe">
+            </div>
+            
+            <div class="form-group">
+                <label for="engineer-email">Email (for Create):</label>
+                <input type="email" id="engineer-email" value="john@example.com">
+            </div>
+            
+            <button onclick="handleEngineer()">Submit</button>
+            
+            <div class="response">
+                <pre id="engineer-response"></pre>
+            </div>
+        </div>
+        
+        <!-- Cases Section -->
+        <div class="section">
+            <h2>Cases</h2>
+            
+            <div class="form-group">
+                <label for="case-action">Action:</label>
+                <select id="case-action">
+                    <option value="create">Create Case</option>
+                    <option value="getAll">Get All Cases</option>
+                    <option value="getById">Get Case by ID</option>
+                    <option value="getByEngineer">Get Cases by Engineer</option>
+                    <option value="getByDateRange">Get Cases by Date Range</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="case-id">Case ID (for Get):</label>
+                <input type="number" id="case-id" value="1">
+            </div>
+            
+            <div class="form-group">
+                <label for="case-engineer-id">Engineer ID:</label>
+                <input type="number" id="case-engineer-id" value="1">
+            </div>
+            
+            <div class="form-group">
+                <label for="case-description">Description (for Create):</label>
+                <textarea id="case-description">Customer having issues with login</textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="case-date">Date (for Create):</label>
+                <input type="date" id="case-date" value="2023-08-15">
+            </div>
+            
+            <div class="form-group">
+                <label for="case-rating">CES Rating (for Create):</label>
+                <input type="number" id="case-rating" min="1" max="5" value="4">
+            </div>
+            
+            <button onclick="handleCase()">Submit</button>
+            
+            <div class="response">
+                <pre id="case-response"></pre>
+            </div>
+        </div>
+        
+        <!-- Reports Section -->
+        <div class="section">
+            <h2>Reports</h2>
+            
+            <div class="form-group">
+                <label for="report-action">Action:</label>
+                <select id="report-action">
+                    <option value="create">Create Report</option>
+                    <option value="getAll">Get All Reports</option>
+                    <option value="getById">Get Report by ID</option>
+                    <option value="getByEngineer">Get Reports by Engineer</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="report-id">Report ID (for Get):</label>
+                <input type="number" id="report-id" value="1">
+            </div>
+            
+            <div class="form-group">
+                <label for="report-engineer">Engineer Name:</label>
+                <input type="text" id="report-engineer" value="John Doe">
+            </div>
+            
+            <div class="form-group">
+                <label for="report-chat">Chat (for Create):</label>
+                <textarea id="report-chat">Weekly performance report</textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="report-total">Total (for Create):</label>
+                <input type="number" id="report-total" value="2">
+            </div>
+            
+            <button onclick="handleReport()">Submit</button>
+            
+            <div class="response">
+                <pre id="report-response"></pre>
+            </div>
+        </div>
+        
+        <!-- Settings Section -->
+        <div class="section">
+            <h2>Settings</h2>
+            
+            <div class="form-group">
+                <label for="setting-action">Action:</label>
+                <select id="setting-action">
+                    <option value="create">Create Setting</option>
+                    <option value="getAll">Get All Settings</option>
+                    <option value="getById">Get Setting by ID</option>
+                    <option value="getByUser">Get Settings by User</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="setting-id">Setting ID (for Get):</label>
+                <input type="number" id="setting-id" value="1">
+            </div>
+            
+            <div class="form-group">
+                <label for="setting-user-id">User ID:</label>
+                <input type="number" id="setting-user-id" value="1">
+            </div>
+            
+            <div class="form-group">
+                <label for="setting-key">Setting Key (for Create):</label>
+                <input type="text" id="setting-key" value="theme">
+            </div>
+            
+            <button onclick="handleSetting()">Submit</button>
+            
+            <div class="response">
+                <pre id="setting-response"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let token = '';
+        const baseUrl = 'http://localhost:8080/api';
+        
+        // Authentication
+        async function authenticate() {
+            const action = document.getElementById('auth-action').value;
+            const username = document.getElementById('auth-username').value;
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            const role = document.getElementById('auth-role').value;
+            
+            let url = `${baseUrl}/auth/${action}`;
+            let body = {};
+            
+            if (action === 'signup') {
+                body = {
+                    username,
+                    email,
+                    password,
+                    role: [role]
+                };
+            } else {
+                body = {
+                    username,
+                    password
+                };
+            }
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                });
+                
+                const data = await response.json();
+                document.getElementById('auth-response').textContent = JSON.stringify(data, null, 2);
+                
+                if (action === 'signin' && data.accessToken) {
+                    token = data.accessToken;
+                    alert('Successfully logged in! Token saved for future requests.');
+                }
+            } catch (error) {
+                document.getElementById('auth-response').textContent = error.message;
+            }
+        }
+        
+        // Teams
+        async function handleTeam() {
+            if (!token) {
+                alert('Please sign in first to get a token!');
+                return;
+            }
+            
+            const action = document.getElementById('team-action').value;
+            const teamId = document.getElementById('team-id').value;
+            const teamName = document.getElementById('team-name').value;
+            
+            let url = `${baseUrl}/teams`;
+            let method = 'GET';
+            let body = null;
+            
+            if (action === 'create') {
+                method = 'POST';
+                body = JSON.stringify({
+                    name: teamName,
+                    user: { id: 1 }
+                });
+            } else if (action === 'getById') {
+                url = `${url}/${teamId}`;
+            }
+            
+            try {
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body
+                });
+                
+                const data = await response.json();
+                document.getElementById('team-response').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('team-response').textContent = error.message;
+            }
+        }
+        
+        // Engineers
+        async function handleEngineer() {
+            if (!token) {
+                alert('Please sign in first to get a token!');
+                return;
+            }
+            
+            const action = document.getElementById('engineer-action').value;
+            const engineerId = document.getElementById('engineer-id').value;
+            const teamId = document.getElementById('engineer-team-id').value;
+            const fullName = document.getElementById('engineer-name').value;
+            const email = document.getElementById('engineer-email').value;
+            
+            let url = `${baseUrl}/engineers`;
+            let method = 'GET';
+            let body = null;
+            
+            if (action === 'create') {
+                method = 'POST';
+                body = JSON.stringify({
+                    fullName,
+                    email,
+                    phoneNumber: '123-456-7890',
+                    gender: 'Male',
+                    manager: 'Jane Smith',
+                    team: { id: parseInt(teamId) }
+                });
+            } else if (action === 'getById') {
+                url = `${url}/${engineerId}`;
+            } else if (action === 'getByTeam') {
+                url = `${url}/team/${teamId}`;
+            }
+            
+            try {
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body
+                });
+                
+                const data = await response.json();
+                document.getElementById('engineer-response').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('engineer-response').textContent = error.message;
+            }
+        }
+        
+        // Cases
+        async function handleCase() {
+            if (!token) {
+                alert('Please sign in first to get a token!');
+                return;
+            }
+            
+            const action = document.getElementById('case-action').value;
+            const caseId = document.getElementById('case-id').value;
+            const engineerId = document.getElementById('case-engineer-id').value;
+            const description = document.getElementById('case-description').value;
+            const date = document.getElementById('case-date').value;
+            const rating = document.getElementById('case-rating').value;
+            
+            let url = `${baseUrl}/cases`;
+            let method = 'GET';
+            let body = null;
+            
+            if (action === 'create') {
+                method = 'POST';
+                body = JSON.stringify({
+                    caseDescription: description,
+                    date,
+                    cesRating: parseInt(rating),
+                    surveySource: 'Email',
+                    engineer: { id: parseInt(engineerId) }
+                });
+            } else if (action === 'getById') {
+                url = `${url}/${caseId}`;
+            } else if (action === 'getByEngineer') {
+                url = `${url}/engineer/${engineerId}`;
+            } else if (action === 'getByDateRange') {
+                url = `${url}/date-range?startDate=2023-01-01&endDate=2023-12-31`;
+            }
+            
+            try {
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body
+                });
+                
+                const data = await response.json();
+                document.getElementById('case-response').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('case-response').textContent = error.message;
+            }
+        }
+        
+        // Reports
+        async function handleReport() {
+            if (!token) {
+                alert('Please sign in first to get a token!');
+                return;
+            }
+            
+            const action = document.getElementById('report-action').value;
+            const reportId = document.getElementById('report-id').value;
+            const engineerName = document.getElementById('report-engineer').value;
+            const chat = document.getElementById('report-chat').value;
+            const total = document.getElementById('report-total').value;
+            
+            let url = `${baseUrl}/reports`;
+            let method = 'GET';
+            let body = null;
+            
+            if (action === 'create') {
+                method = 'POST';
+                body = JSON.stringify({
+                    chat,
+                    total: parseInt(total),
+                    engineerName
+                });
+            } else if (action === 'getById') {
+                url = `${url}/${reportId}`;
+            } else if (action === 'getByEngineer') {
+                url = `${url}/engineer/${encodeURIComponent(engineerName)}`;
+            }
+            
+            try {
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body
+                });
+                
+                const data = await response.json();
+                document.getElementById('report-response').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('report-response').textContent = error.message;
+            }
+        }
+        
+        // Settings
+        async function handleSetting() {
+            if (!token) {
+                alert('Please sign in first to get a token!');
+                return;
+            }
+            
+            const action = document.getElementById('setting-action').value;
+            const settingId = document.getElementById('setting-id').value;
+            const userId = document.getElementById('setting-user-id').value;
+            const settingKey = document.getElementById('setting-key').value;
+            
+            let url = `${baseUrl}/settings`;
+            let method = 'GET';
+            let body = null;
+            
+            if (action === 'create') {
+                method = 'POST';
+                body = JSON.stringify({
+                    settingKey,
+                    user: { id: parseInt(userId) }
+                });
+            } else if (action === 'getById') {
+                url = `${url}/${settingId}`;
+            } else if (action === 'getByUser') {
+                url = `${url}/user/${userId}`;
+            }
+            
+            try {
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body
+                });
+                
+                const data = await response.json();
+                document.getElementById('setting-response').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('setting-response').textContent = error.message;
+            }
+        }
+    </script>
+</body>
+</html>

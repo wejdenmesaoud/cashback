@@ -1,0 +1,3 @@
+Engineer Full Name,Time Hierarchy (Day),SAP Case ID,Case Description,Top Contract Type,Survey Source,CES Rating,CES Driver - Correct Solution,CES Driver - Timely Updates,CES Driver - Timely Solution,CES Driver - Professionalism,CES Driver - Expertise,Chat Session ID,Survey Feedback,Manager Name
+John Doe,Jan 15, 2023,SAP12345,Network connectivity issue,Premium,Case,4,5,4,3,5,4,,Customer was satisfied,Jane Smith
+Jane Smith,Feb 20, 2023,SAP67890,Software installation problem,Standard,Chat,5,5,5,5,5,5,CHAT123,Great service,Robert Johnson

@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  # Spring Boot Application
+  app:
+    build: .
+    container_name: casecashback-app
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/cashcase?useSSL=false&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=admin
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    networks:
+      - casecashback-network
+    restart: always
+
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: casecashback-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=admin
+      - MYSQL_DATABASE=cashcase
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=password
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - casecashback-network
+    restart: always
+    command: --default-authentication-plugin=mysql_native_password
+
+  # phpMyAdmin
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: casecashback-phpmyadmin
+    ports:
+      - "8081:80"
+    environment:
+      - PMA_HOST=mysql
+      - PMA_PORT=3306
+      - MYSQL_ROOT_PASSWORD=admin
+    depends_on:
+      - mysql
+    networks:
+      - casecashback-network
+    restart: always
+
+networks:
+  casecashback-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
