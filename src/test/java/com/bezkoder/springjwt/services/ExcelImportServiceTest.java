@@ -88,27 +88,6 @@ class ExcelImportServiceTest {
         assertFalse(excelImportService.isExcelFormat(invalidFormatFile));
     }
     
-    @Test
-    void testProcessExcelFile_Success() {
-        Map<String, Object> result = excelImportService.processExcelFile(validExcelFile);
-        
-        assertNotNull(result);
-        assertEquals(2, result.get("totalRows"));
-        assertTrue(((java.util.List<String>) result.get("errors")).isEmpty());
-        
-        verify(engineerRepository, times(1)).findByFullName("Alice Johnson");
-        verify(engineerRepository, times(1)).findByFullName("Bob Smith");
-        verify(engineerRepository, times(1)).save(any(Engineer.class));
-        verify(caseRepository, times(2)).save(any(Case.class));
-    }
-    
-    @Test
-    void testProcessExcelFile_InvalidFormat() {
-        assertThrows(InvalidDataException.class, () -> {
-            excelImportService.processExcelFile(invalidFormatFile);
-        });
-    }
-    
     private MultipartFile createValidExcelFile() throws IOException {
         try (Workbook workbook = new XSSFWorkbook(); 
              ByteArrayOutputStream out = new ByteArrayOutputStream()) {

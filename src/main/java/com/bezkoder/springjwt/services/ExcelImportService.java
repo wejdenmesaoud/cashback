@@ -71,46 +71,46 @@ public class ExcelImportService {
     }
 
     public Map<String, Object> processExcelFile(MultipartFile file) {
-        try {
-            Map<String, Object> result = new HashMap<>();
-            List<Case> importedCases = new ArrayList<>();
-            List<String> errors = new ArrayList<>();
+        Map<String, Object> result = new HashMap<>();
+        List<Case> importedCases = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
 
-            try (InputStream is = file.getInputStream();
-                 Workbook workbook = new XSSFWorkbook(is)) {
+        try (InputStream is = file.getInputStream();
+             Workbook workbook = new XSSFWorkbook(is)) {
 
-                // Get the first sheet only
-                Sheet sheet = workbook.getSheetAt(0);
+            // Get the first sheet only
+            Sheet sheet = workbook.getSheetAt(0);
 
-                // Skip header row
-                boolean isFirstRow = true;
-                int rowCount = 0;
+            // Skip header row
+            boolean isFirstRow = true;
+            int rowCount = 0;
 
-                for (Row row : sheet) {
-                    if (isFirstRow) {
-                        isFirstRow = false;
-                        continue;
-                    }
-
-                    try {
-                        Case importedCase = processRow(row);
-                        if (importedCase != null) {
-                            importedCases.add(importedCase);
-                            rowCount++;
-                        }
-                    } catch (Exception e) {
-                        errors.add("Error in row " + (row.getRowNum() + 1) + ": " + e.getMessage());
-                        logger.error("Error processing row {}: {}", row.getRowNum() + 1, e.getMessage());
-                    }
+            for (Row row : sheet) {
+                if (isFirstRow) {
+                    isFirstRow = false;
+                    continue;
                 }
 
-                result.put("totalRows", rowCount);
-                result.put("importedCases", importedCases);
-                result.put("errors", errors);
-
-                return result;
+                try {
+                    Case importedCase = processRow(row);
+                    if (importedCase != null) {
+                        importedCases.add(importedCase);
+                        rowCount++;
+                    }
+                } catch (Exception e) {
+                    errors.add("Error in row " + (row.getRowNum() + 1) + ": " + e.getMessage());
+                    logger.error("Error processing row {}: {}", row.getRowNum() + 1, e.getMessage());
+                }
             }
-        } catch (IOException e) {
+
+            result.put("totalRows", rowCount);
+            result.put("importedCases", importedCases);
+            result.put("errors", errors);
+
+            return result;
+
+        } catch (Exception e) {
+            // Wrap any POI or IO exception in our custom exception
             throw new InvalidDataException("Failed to process Excel file: " + e.getMessage());
         }
     }
@@ -131,7 +131,7 @@ public class ExcelImportService {
         Integer cesDriverExpertise = getCellValueAsInteger(row.getCell(11));
         String chatSessionId = getCellValueAsString(row.getCell(12));
         String surveyFeedback = getCellValueAsString(row.getCell(13));
-        String managerName = getCellValueAsString(row.getCell(14)); // Manager name in column O
+        String managerName = getCellValueAsString(row.getCell(14));
 
         // Validate required fields
         if (engineerFullName == null || engineerFullName.trim().isEmpty()) {
@@ -158,30 +158,25 @@ public class ExcelImportService {
 
         // Find or create engineer
         Engineer engineer = engineerRepository.findByFullName(engineerFullName);
+        boolean needsSave = false;
+
         if (engineer == null) {
             engineer = new Engineer();
             engineer.setFullName(engineerFullName);
+            needsSave = true;
+        }
 
-            // Use manager from Excel if available, otherwise use default
-            if (managerName != null && !managerName.trim().isEmpty()) {
-                engineer.setManager(managerName);
-            } else {
-                engineer.setManager("Default Manager"); // Set a non-empty default manager to satisfy @NotBlank constraint
-            }
+        // Check if we need to update the manager
+        if (engineer.getManager() == null || engineer.getManager().trim().isEmpty()) {
+            String newManager = managerName != null && !managerName.trim().isEmpty() ? managerName : "Default Manager";
+            engineer.setManager(newManager);
+            needsSave = true;
+        }
 
+        // Only save if we created a new engineer or updated the manager
+        if (needsSave) {
             engineer = engineerRepository.save(engineer);
-            logger.info("Created new engineer: {} with manager: {}", engineerFullName, engineer.getManager());
-        } else {
-            // Check if existing engineer has a manager, if not, set a default one
-            if (engineer.getManager() == null || engineer.getManager().trim().isEmpty()) {
-                if (managerName != null && !managerName.trim().isEmpty()) {
-                    engineer.setManager(managerName);
-                } else {
-                    engineer.setManager("Default Manager");
-                }
-                engineer = engineerRepository.save(engineer);
-                logger.info("Updated existing engineer: {} with manager: {}", engineerFullName, engineer.getManager());
-            }
+            logger.info("Saved engineer: {} with manager: {}", engineerFullName, engineer.getManager());
         }
 
         // Create new case with all the fields
