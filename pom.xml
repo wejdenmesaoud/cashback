@@ -17,12 +17,38 @@
 
 	<properties>
 		<java.version>17</java.version>
-		<sonar.host.url>http://127.0.0.1:9000</sonar.host.url>
+		<sonar.host.url>${sonar.server.url}</sonar.host.url>
 		<sonar.login>admin</sonar.login>
 		<sonar.password>admin</sonar.password>
 		<sonar.projectKey>cashback-security-jwt</sonar.projectKey>
 		<sonar.projectName>Cashback Security JWT</sonar.projectName>
+		<!-- Default SonarQube URL for local development -->
+		<sonar.server.url>http://127.0.0.1:9000</sonar.server.url>
 	</properties>
+
+	<profiles>
+		<profile>
+			<id>local</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<properties>
+				<sonar.server.url>http://127.0.0.1:9000</sonar.server.url>
+			</properties>
+		</profile>
+		<profile>
+			<id>docker</id>
+			<properties>
+				<sonar.server.url>http://casecashback-sonarqube:9000</sonar.server.url>
+			</properties>
+		</profile>
+		<profile>
+			<id>jenkins</id>
+			<properties>
+				<sonar.server.url>http://casecashback-sonarqube:9000</sonar.server.url>
+			</properties>
+		</profile>
+	</profiles>
 
 	<dependencies>
 		<dependency>

@@ -70,25 +70,19 @@ pipeline {
                     try {
                         if (isUnix()) {
                             sh """
-                                ./mvnw sonar:sonar \
-                                -Dsonar.host.url=${SONAR_HOST_URL} \
-                                -Dsonar.login=${SONAR_LOGIN} \
-                                -Dsonar.password=${SONAR_PASSWORD} \
+                                ./mvnw sonar:sonar -Pjenkins \
                                 -Dsonar.projectKey=cashback-security-jwt \
                                 -Dsonar.projectName="Cashback Security JWT"
                             """
                         } else {
                             bat """
-                                mvnw.cmd sonar:sonar ^
-                                -Dsonar.host.url=%SONAR_HOST_URL% ^
-                                -Dsonar.login=%SONAR_LOGIN% ^
-                                -Dsonar.password=%SONAR_PASSWORD% ^
+                                mvnw.cmd sonar:sonar -Pjenkins ^
                                 -Dsonar.projectKey=cashback-security-jwt ^
                                 -Dsonar.projectName="Cashback Security JWT"
                             """
                         }
                         echo "SonarQube analysis completed successfully!"
-                        echo "View results at: ${SONAR_HOST_URL}/dashboard?id=cashback-security-jwt"
+                        echo "View results at: http://localhost:9000/dashboard?id=cashback-security-jwt"
                     } catch (Exception e) {
                         echo "SonarQube analysis failed: ${e.getMessage()}"
                         echo "This might be due to SonarQube not being fully ready or network issues."
