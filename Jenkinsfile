@@ -12,47 +12,80 @@ pipeline {
         stage('Checkout') {
             steps {
                 script {
-                    // Clean workspace before checkout
-                    deleteDir()
-                    
-                    // Alternative: Use git step with explicit URL and credentials
-                    retry(3) {
-                        timeout(time: 10, unit: 'MINUTES') {
-                            // Option 1: Use checkout scm with better error handling
-                            try {
-                                checkout([
-                                    $class: 'GitSCM',
-                                    branches: scm.branches,
-                                    doGenerateSubmoduleConfigurations: false,
-                                    extensions: [
-                                        [$class: 'CloneOption', 
-                                         depth: 1, 
-                                         noTags: false, 
-                                         reference: '', 
-                                         shallow: true,
-                                         timeout: 20],
-                                        [$class: 'CheckoutOption', timeout: 20],
-                                        [$class: 'CleanBeforeCheckout'],
-                                        [$class: 'CleanCheckout']
-                                    ],
-                                    submoduleCfg: [],
-                                    userRemoteConfigs: scm.userRemoteConfigs
-                                ])
-                            } catch (Exception e) {
-                                echo "Checkout failed: ${e.getMessage()}"
-                                // Option 2: Fallback to git command
-                                if (isUnix()) {
-                                    sh 'git --version'
-                                    sh 'git config --global http.postBuffer 1048576000'
-                                    sh 'git config --global http.maxRequestBuffer 100M'
-                                    sh 'git config --global core.preloadindex true'
-                                } else {
-                                    bat 'git --version'
-                                    bat 'git config --global http.postBuffer 1048576000'
-                                    bat 'git config --global http.maxRequestBuffer 100M'
-                                    bat 'git config --global core.preloadindex true'
+                    // For local development, skip Git checkout if files are already present
+                    if (fileExists('pom.xml')) {
+                        echo "✅ Working with local files - skipping Git checkout"
+                        echo "Local workspace detected with pom.xml present"
+                    } else {
+                        // Clean workspace before checkout
+                        deleteDir()
+                        
+                        echo "Attempting to clone repository: https://github.com/wejdenmesaoud/cashback.git"
+                        echo "Testing network connectivity first..."
+                        
+                        // Test network connectivity
+                        try {
+                            if (isUnix()) {
+                                sh 'ping -c 3 github.com || echo "Ping failed, but continuing..."'
+                                sh 'curl -I https://github.com --connect-timeout 30 || echo "Curl test failed, but continuing..."'
+                            } else {
+                                bat 'ping -n 3 github.com || echo "Ping failed, but continuing..."'
+                                bat 'curl -I https://github.com --connect-timeout 30 || echo "Curl test failed, but continuing..."'
+                            }
+                        } catch (Exception e) {
+                            echo "Network connectivity test failed: ${e.getMessage()}"
+                        }
+                        
+                        // Configure Git for better network handling
+                        if (isUnix()) {
+                            sh '''
+                                git config --global http.postBuffer 1048576000
+                                git config --global http.maxRequestBuffer 100M
+                                git config --global core.preloadindex true
+                                git config --global http.lowSpeedLimit 0
+                                git config --global http.lowSpeedTime 999999
+                                git config --global http.timeout 600
+                            '''
+                        } else {
+                            bat '''
+                                git config --global http.postBuffer 1048576000
+                                git config --global http.maxRequestBuffer 100M
+                                git config --global core.preloadindex true
+                                git config --global http.lowSpeedLimit 0
+                                git config --global http.lowSpeedTime 999999
+                                git config --global http.timeout 600
+                            '''
+                        }
+                        
+                        // Retry checkout with better configuration and longer timeouts
+                        retry(5) {
+                            timeout(time: 20, unit: 'MINUTES') {
+                                try {
+                                    checkout([
+                                        $class: 'GitSCM',
+                                        branches: scm.branches,
+                                        doGenerateSubmoduleConfigurations: false,
+                                        extensions: [
+                                            [$class: 'CloneOption', 
+                                             depth: 0, 
+                                             noTags: false, 
+                                             reference: '', 
+                                             shallow: false,
+                                             timeout: 30],
+                                            [$class: 'CheckoutOption', timeout: 30],
+                                            [$class: 'CleanBeforeCheckout'],
+                                            [$class: 'CleanCheckout']
+                                        ],
+                                        submoduleCfg: [],
+                                        userRemoteConfigs: scm.userRemoteConfigs
+                                    ])
+                                    echo "✅ Successfully cloned repository!"
+                                } catch (Exception e) {
+                                    echo "❌ Checkout attempt failed: ${e.getMessage()}"
+                                    echo "Waiting 30 seconds before retry..."
+                                    sleep(30)
+                                    throw e
                                 }
-                                throw e
                             }
                         }
                     }
