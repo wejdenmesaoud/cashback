@@ -17,7 +17,7 @@ if %ERRORLEVEL% NEQ 0 (
 echo.
 echo Running Maven SonarQube analysis...
 mvnw.cmd clean test sonar:sonar ^
-    -Dsonar.host.url=http://127.0.0.1:9000 ^
+    -Dsonar.host.url=http://casecashback-sonarqube:9000 ^
     -Dsonar.login=admin ^
     -Dsonar.password=root ^
     -Dsonar.projectKey=cashback-security-jwt ^
