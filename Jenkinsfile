@@ -11,7 +11,52 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                script {
+                    // Clean workspace before checkout
+                    deleteDir()
+                    
+                    // Alternative: Use git step with explicit URL and credentials
+                    retry(3) {
+                        timeout(time: 10, unit: 'MINUTES') {
+                            // Option 1: Use checkout scm with better error handling
+                            try {
+                                checkout([
+                                    $class: 'GitSCM',
+                                    branches: scm.branches,
+                                    doGenerateSubmoduleConfigurations: false,
+                                    extensions: [
+                                        [$class: 'CloneOption', 
+                                         depth: 1, 
+                                         noTags: false, 
+                                         reference: '', 
+                                         shallow: true,
+                                         timeout: 20],
+                                        [$class: 'CheckoutOption', timeout: 20],
+                                        [$class: 'CleanBeforeCheckout'],
+                                        [$class: 'CleanCheckout']
+                                    ],
+                                    submoduleCfg: [],
+                                    userRemoteConfigs: scm.userRemoteConfigs
+                                ])
+                            } catch (Exception e) {
+                                echo "Checkout failed: ${e.getMessage()}"
+                                // Option 2: Fallback to git command
+                                if (isUnix()) {
+                                    sh 'git --version'
+                                    sh 'git config --global http.postBuffer 1048576000'
+                                    sh 'git config --global http.maxRequestBuffer 100M'
+                                    sh 'git config --global core.preloadindex true'
+                                } else {
+                                    bat 'git --version'
+                                    bat 'git config --global http.postBuffer 1048576000'
+                                    bat 'git config --global http.maxRequestBuffer 100M'
+                                    bat 'git config --global core.preloadindex true'
+                                }
+                                throw e
+                            }
+                        }
+                    }
+                }
             }
         }
         
@@ -70,19 +115,25 @@ pipeline {
                     try {
                         if (isUnix()) {
                             sh """
-                                ./mvnw sonar:sonar -Pjenkins \
+                                ./mvnw sonar:sonar \
+                                -Dsonar.host.url=${SONAR_HOST_URL} \
+                                -Dsonar.login=${SONAR_LOGIN} \
+                                -Dsonar.password=${SONAR_PASSWORD} \
                                 -Dsonar.projectKey=cashback-security-jwt \
                                 -Dsonar.projectName="Cashback Security JWT"
                             """
                         } else {
                             bat """
-                                mvnw.cmd sonar:sonar -Pjenkins ^
+                                mvnw.cmd sonar:sonar ^
+                                -Dsonar.host.url=%SONAR_HOST_URL% ^
+                                -Dsonar.login=%SONAR_LOGIN% ^
+                                -Dsonar.password=%SONAR_PASSWORD% ^
                                 -Dsonar.projectKey=cashback-security-jwt ^
                                 -Dsonar.projectName="Cashback Security JWT"
                             """
                         }
                         echo "SonarQube analysis completed successfully!"
-                        echo "View results at: http://localhost:9000/dashboard?id=cashback-security-jwt"
+                        echo "View results at: ${SONAR_HOST_URL}/dashboard?id=cashback-security-jwt"
                     } catch (Exception e) {
                         echo "SonarQube analysis failed: ${e.getMessage()}"
                         echo "This might be due to SonarQube not being fully ready or network issues."
