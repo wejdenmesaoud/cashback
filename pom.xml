@@ -18,8 +18,6 @@
 	<properties>
 		<java.version>17</java.version>
 		<sonar.host.url>http://casecashback-sonarqube:9000</sonar.host.url>
-		<sonar.login>admin</sonar.login>
-		<sonar.password>root</sonar.password>
 		<sonar.projectKey>cashback-security-jwt</sonar.projectKey>
 		<sonar.projectName>Cashback Security JWT</sonar.projectName>
 	</properties>
