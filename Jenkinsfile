@@ -12,31 +12,44 @@ pipeline {
         stage('Checkout') {
             steps {
                 script {
-                    // For local development, skip Git checkout if files are already present
+                    // For local development, always use local files if available
                     if (fileExists('pom.xml')) {
                         echo "✅ Working with local files - skipping Git checkout"
                         echo "Local workspace detected with pom.xml present"
+                        
+                        // Show current directory contents for debugging
+                        if (isUnix()) {
+                            sh 'ls -la'
+                            sh 'pwd'
+                        } else {
+                            bat 'dir'
+                            bat 'cd'
+                        }
                     } else {
+                        echo "❌ No local files found, attempting Git checkout..."
+                        
                         // Clean workspace before checkout
                         deleteDir()
                         
-                        echo "Attempting to clone repository: https://github.com/wejdenmesaoud/cashback.git"
-                        echo "Testing network connectivity first..."
+                        echo "Testing network connectivity to GitHub..."
                         
-                        // Test network connectivity
+                        // Enhanced network connectivity test
                         try {
                             if (isUnix()) {
-                                sh 'ping -c 3 github.com || echo "Ping failed, but continuing..."'
-                                sh 'curl -I https://github.com --connect-timeout 30 || echo "Curl test failed, but continuing..."'
+                                sh 'nslookup github.com || echo "DNS lookup failed"'
+                                sh 'ping -c 3 github.com || echo "Ping failed"'
+                                sh 'curl -v --connect-timeout 10 https://github.com || echo "HTTPS connection failed"'
                             } else {
-                                bat 'ping -n 3 github.com || echo "Ping failed, but continuing..."'
-                                bat 'curl -I https://github.com --connect-timeout 30 || echo "Curl test failed, but continuing..."'
+                                bat 'nslookup github.com || echo "DNS lookup failed"'
+                                bat 'ping -n 3 github.com || echo "Ping failed"'
+                                bat 'curl -v --connect-timeout 10 https://github.com || echo "HTTPS connection failed"'
                             }
                         } catch (Exception e) {
-                            echo "Network connectivity test failed: ${e.getMessage()}"
+                            echo "⚠️ Network connectivity test failed: ${e.getMessage()}"
+                            echo "This might indicate firewall, proxy, or DNS issues"
                         }
                         
-                        // Configure Git for better network handling
+                        // Configure Git with more aggressive network settings
                         if (isUnix()) {
                             sh '''
                                 git config --global http.postBuffer 1048576000
@@ -44,7 +57,9 @@ pipeline {
                                 git config --global core.preloadindex true
                                 git config --global http.lowSpeedLimit 0
                                 git config --global http.lowSpeedTime 999999
-                                git config --global http.timeout 600
+                                git config --global http.timeout 900
+                                git config --global http.sslVerify false
+                                git config --global core.compression 0
                             '''
                         } else {
                             bat '''
@@ -53,17 +68,22 @@ pipeline {
                                 git config --global core.preloadindex true
                                 git config --global http.lowSpeedLimit 0
                                 git config --global http.lowSpeedTime 999999
-                                git config --global http.timeout 600
+                                git config --global http.timeout 900
+                                git config --global http.sslVerify false
+                                git config --global core.compression 0
                             '''
                         }
                         
-                        // Retry checkout with better configuration and longer timeouts
-                        retry(5) {
-                            timeout(time: 20, unit: 'MINUTES') {
-                                try {
+                        // Try alternative approaches for checkout
+                        def checkoutSuccess = false
+                        
+                        // Approach 1: Standard checkout with extended timeout
+                        if (!checkoutSuccess) {
+                            try {
+                                timeout(time: 30, unit: 'MINUTES') {
                                     checkout([
                                         $class: 'GitSCM',
-                                        branches: scm.branches,
+                                        branches: [[name: '*/main']],
                                         doGenerateSubmoduleConfigurations: false,
                                         extensions: [
                                             [$class: 'CloneOption', 
@@ -71,22 +91,54 @@ pipeline {
                                              noTags: false, 
                                              reference: '', 
                                              shallow: false,
-                                             timeout: 30],
-                                            [$class: 'CheckoutOption', timeout: 30],
+                                             timeout: 60],
+                                            [$class: 'CheckoutOption', timeout: 60],
                                             [$class: 'CleanBeforeCheckout'],
                                             [$class: 'CleanCheckout']
                                         ],
                                         submoduleCfg: [],
-                                        userRemoteConfigs: scm.userRemoteConfigs
+                                        userRemoteConfigs: [[
+                                            url: 'https://github.com/wejdenmesaoud/cashback.git'
+                                        ]]
                                     ])
-                                    echo "✅ Successfully cloned repository!"
-                                } catch (Exception e) {
-                                    echo "❌ Checkout attempt failed: ${e.getMessage()}"
-                                    echo "Waiting 30 seconds before retry..."
-                                    sleep(30)
-                                    throw e
+                                    checkoutSuccess = true
+                                    echo "✅ Successfully cloned repository using standard method!"
                                 }
+                            } catch (Exception e) {
+                                echo "❌ Standard checkout failed: ${e.getMessage()}"
                             }
+                        }
+                        
+                        // Approach 2: Manual git clone as fallback
+                        if (!checkoutSuccess) {
+                            try {
+                                echo "Attempting manual git clone..."
+                                if (isUnix()) {
+                                    sh 'git clone --depth 1 https://github.com/wejdenmesaoud/cashback.git .'
+                                } else {
+                                    bat 'git clone --depth 1 https://github.com/wejdenmesaoud/cashback.git .'
+                                }
+                                checkoutSuccess = true
+                                echo "✅ Successfully cloned repository using manual method!"
+                            } catch (Exception e) {
+                                echo "❌ Manual git clone failed: ${e.getMessage()}"
+                            }
+                        }
+                        
+                        // Final fallback: Error with helpful message
+                        if (!checkoutSuccess) {
+                            error """
+❌ All checkout methods failed. This appears to be a network connectivity issue.
+
+Possible solutions:
+1. Check if Jenkins can access the internet
+2. Verify proxy settings if behind corporate firewall
+3. Check if GitHub is accessible from your network
+4. Consider using local file checkout instead
+5. Verify the repository URL is correct
+
+For local development, ensure your source files are available in the Jenkins workspace.
+"""
                         }
                     }
                 }
