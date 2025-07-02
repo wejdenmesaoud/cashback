@@ -18,8 +18,8 @@
 	<properties>
 		<java.version>17</java.version>
 		<sonar.host.url>http://casecashback-sonarqube:9000</sonar.host.url>
-		<sonar.projectKey>spring-boot-security-jwt</sonar.projectKey>
-		<sonar.projectName>Cashback Security JWT</sonar.projectName>
+		<sonar.projectKey>com.bezkoder:spring-boot-security-jwt</sonar.projectKey>
+		<sonar.projectName>spring-boot-security-jwt</sonar.projectName>
 	</properties>
 
 	<dependencies>
