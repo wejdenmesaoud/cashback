@@ -5,7 +5,7 @@ pipeline {
         // Use container name instead of localhost since Jenkins runs in Docker
         SONAR_HOST_URL = 'http://casecashback-sonarqube:9000'
         SONAR_LOGIN = 'admin'
-        SONAR_PASSWORD = 'admin'
+        SONAR_PASSWORD = 'root'
     }
     
     stages {

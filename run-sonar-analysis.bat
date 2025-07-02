@@ -19,7 +19,7 @@ echo Running Maven SonarQube analysis...
 mvnw.cmd clean test sonar:sonar ^
     -Dsonar.host.url=http://127.0.0.1:9000 ^
     -Dsonar.login=admin ^
-    -Dsonar.password=admin ^
+    -Dsonar.password=root ^
     -Dsonar.projectKey=cashback-security-jwt ^
     -Dsonar.projectName="Cashback Security JWT"
 
