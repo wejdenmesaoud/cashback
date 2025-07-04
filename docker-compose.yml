@@ -1,4 +1,21 @@
 services:
+  # Spring Boot Application
+  app:
+    build: .
+    container_name: casecashback-app
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/cashcase?useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=user
+      - SPRING_DATASOURCE_PASSWORD=password
+    depends_on:
+      - mysql
+    networks:
+      - casecashback-network
+    restart: always
+
   # MySQL Database
   mysql:
     image: mysql:8.0
@@ -18,12 +35,77 @@ services:
     restart: always
     command: --default-authentication-plugin=mysql_native_password
 
+  # Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: casecashback-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+    networks:
+      - casecashback-network
+    restart: always
+    depends_on:
+      - app
+
+  # Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: casecashback-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - casecashback-network
+    restart: always
+    depends_on:
+      - prometheus
+
+  # Jenkins with Git support
+  jenkins:
+    build:
+      context: .
+      dockerfile: Dockerfile.jenkins
+    container_name: casecashback-jenkins
+    ports:
+      - "8081:8080"
+      - "50000:50000"
+    environment:
+      - JENKINS_OPTS=--httpPort=8080
+      - JAVA_OPTS=-Djenkins.install.runSetupWizard=false -Dcasc.reload.token=admin
+    volumes:
+      - jenkins-data:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./:/workspace:ro
+    networks:
+      - casecashback-network
+    restart: always
+    depends_on:
+      - mysql
+      - sonarqube
+
   # phpMyAdmin
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     container_name: casecashback-phpmyadmin
     ports:
-      - "8081:80"
+      - "8082:80"
     environment:
       - PMA_HOST=mysql
       - PMA_PORT=3306
@@ -53,7 +135,7 @@ services:
     image: sonatype/nexus3:latest
     container_name: casecashback-nexus
     ports:
-      - "8082:8081"
+      - "8083:8081"
     environment:
       - INSTALL4J_ADD_VM_PARAMS=-Xms1g -Xmx1g -XX:MaxDirectMemorySize=2g
     volumes:
@@ -72,3 +154,6 @@ volumes:
   sonarqube-logs:
   sonarqube-extensions:
   nexus-data:
+  jenkins-data:
+  prometheus-data:
+  grafana-data:
