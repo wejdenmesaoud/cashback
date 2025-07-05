@@ -99,11 +99,17 @@ public class AuthController {
           .map(item -> item.getAuthority())
           .collect(Collectors.toList());
 
-      // Increment metrics for successful login
-      loginSuccessCounter.increment();
+      // Increment metrics for successful login (null-safe for testing)
+      if (loginSuccessCounter != null) {
+        loginSuccessCounter.increment();
+      }
       // Track user activity with timestamp instead of simple increment
-      metricsConfig.trackUserActivity(userDetails.getUsername());
-      sample.stop(authenticationTimer);
+      if (metricsConfig != null) {
+        metricsConfig.trackUserActivity(userDetails.getUsername());
+      }
+      if (authenticationTimer != null) {
+        sample.stop(authenticationTimer);
+      }
 
       return ResponseEntity.ok(new JwtResponse(jwt,
                            userDetails.getId(),
@@ -111,9 +117,13 @@ public class AuthController {
                            userDetails.getEmail(),
                            roles));
     } catch (Exception e) {
-      // Increment metrics for failed login
-      loginFailureCounter.increment();
-      sample.stop(authenticationTimer);
+      // Increment metrics for failed login (null-safe for testing)
+      if (loginFailureCounter != null) {
+        loginFailureCounter.increment();
+      }
+      if (authenticationTimer != null) {
+        sample.stop(authenticationTimer);
+      }
       throw e;
     }
   }
@@ -181,8 +191,10 @@ public class AuthController {
     user.setRoles(roles);
     userRepository.save(user);
 
-    // Increment user registration metric
-    userRegistrationCounter.increment();
+    // Increment user registration metric (null-safe for testing)
+    if (userRegistrationCounter != null) {
+      userRegistrationCounter.increment();
+    }
 
     return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
   }
@@ -193,8 +205,10 @@ public class AuthController {
   })
   @PostMapping("/signout")
   public ResponseEntity<?> logoutUser() {
-    // Decrement active users when user logs out
-    metricsConfig.decrementActiveUsers();
+    // Decrement active users when user logs out (null-safe for testing)
+    if (metricsConfig != null) {
+      metricsConfig.decrementActiveUsers();
+    }
     
     // Clear the security context
     SecurityContextHolder.clearContext();
