@@ -70,7 +70,7 @@ public class MetricsConfig {
         return Gauge.builder("cashback_active_users")
                 .description("Number of currently active users")
                 .tag("type", "business")
-                .register(meterRegistry, activeUsers, AtomicInteger::get);
+                .register(meterRegistry, this, config -> config.getActiveUsers().get());
     }
 
     @Bean
