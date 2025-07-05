@@ -77,10 +77,10 @@ public class MetricsConfig {
 
     @Bean
     public Gauge activeUsersGauge(MeterRegistry meterRegistry) {
-        return Gauge.builder("cashback_active_users")
+        return Gauge.builder("cashback_active_users", this, config -> config.getActiveUsers().get())
                 .description("Number of currently active users")
                 .tag("type", "business")
-                .register(meterRegistry, this, config -> config.getActiveUsers().get());
+                .register(meterRegistry);
     }
 
     @Bean
