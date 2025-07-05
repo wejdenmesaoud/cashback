@@ -8,14 +8,24 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.boot.actuate.info.InfoContributor;
 import org.springframework.boot.actuate.info.Info.Builder;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ConcurrentHashMap;
+import java.time.LocalDateTime;
+import java.util.Map;
 
 @Configuration
+@EnableScheduling
 public class MetricsConfig {
 
     private final AtomicInteger activeUsers = new AtomicInteger(0);
     private final AtomicInteger totalCashbackRequests = new AtomicInteger(0);
+    private final AtomicInteger totalLoginAttempts = new AtomicInteger(0);
+    
+    // Track active user sessions with timestamps
+    private final Map<String, LocalDateTime> activeUserSessions = new ConcurrentHashMap<>();
 
     @Bean
     public Counter loginSuccessCounter(MeterRegistry meterRegistry) {
@@ -86,17 +96,42 @@ public class MetricsConfig {
         };
     }
 
-    // Utility methods for updating metrics
+    // Track user activity with timestamp (for JWT-based sessions)
+    public void trackUserActivity(String username) {
+        activeUserSessions.put(username, LocalDateTime.now());
+        updateActiveUsersCount();
+    }
+
+    // Remove inactive users (sessions older than 30 minutes)
+    @Scheduled(fixedRate = 60000) // Run every minute
+    public void cleanupInactiveUsers() {
+        LocalDateTime cutoff = LocalDateTime.now().minusMinutes(30);
+        activeUserSessions.entrySet().removeIf(entry -> entry.getValue().isBefore(cutoff));
+        updateActiveUsersCount();
+    }
+
+    private void updateActiveUsersCount() {
+        activeUsers.set(activeUserSessions.size());
+    }
+
+    // Legacy methods for backward compatibility
     public void incrementActiveUsers() {
+        // For immediate testing - will be overridden by actual session tracking
         activeUsers.incrementAndGet();
     }
 
     public void decrementActiveUsers() {
-        activeUsers.decrementAndGet();
+        if (activeUsers.get() > 0) {
+            activeUsers.decrementAndGet();
+        }
     }
 
     public void incrementCashbackRequests() {
         totalCashbackRequests.incrementAndGet();
+    }
+
+    public void incrementLoginAttempts() {
+        totalLoginAttempts.incrementAndGet();
     }
 
     public AtomicInteger getActiveUsers() {
@@ -105,5 +140,9 @@ public class MetricsConfig {
 
     public AtomicInteger getTotalCashbackRequests() {
         return totalCashbackRequests;
+    }
+
+    public int getCurrentActiveUsersCount() {
+        return activeUserSessions.size();
     }
 }
