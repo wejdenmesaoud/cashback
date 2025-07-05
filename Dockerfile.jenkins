@@ -1,8 +1,6 @@
 FROM jenkins/jenkins:lts
-
 # Switch to root to install additional packages
 USER root
-
 # Install Docker CLI and Git
 RUN apt-get update && \
     apt-get install -y \
@@ -19,13 +17,11 @@ RUN apt-get update && \
     apt-get install -y docker-ce-cli && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
-
 # Install Maven
 RUN apt-get update && \
     apt-get install -y maven && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
-
 # Install Jenkins plugins
 RUN jenkins-plugin-cli --plugins \
     git \
@@ -38,16 +34,12 @@ RUN jenkins-plugin-cli --plugins \
     ws-cleanup \
     ant \
     gradle \
-    maven-invoker \
     sonar \
     configuration-as-code
-
 # Copy Jenkins configuration
 COPY jenkins-casc.yml /var/jenkins_home/casc_configs/jenkins.yml
-
 # Switch back to jenkins user
 USER jenkins
-
 # Expose Jenkins port
 EXPOSE 8080
 EXPOSE 50000

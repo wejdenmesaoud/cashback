@@ -1,0 +1,44 @@
+jenkins:
+  systemMessage: "Jenkins configured automatically by Configuration as Code"
+  numExecutors: 2
+  mode: NORMAL
+  scmCheckoutRetryCount: 3
+  labelString: ""
+  
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "admin"
+          password: "admin"
+          
+  authorizationStrategy:
+    globalMatrix:
+      permissions:
+        - "Overall/Administer:admin"
+        - "Overall/Read:authenticated"
+
+  remotingSecurity:
+    enabled: true
+
+tool:
+  git:
+    installations:
+      - name: "Default"
+        home: "git"
+        
+  maven:
+    installations:
+      - name: "Maven-3"
+        home: "/usr/share/maven"
+
+unclassified:
+  location:
+    url: "http://localhost:8081/"
+    adminAddress: "admin@localhost"
+    
+  sonarGlobalConfiguration:
+    installations:
+      - name: "SonarQube"
+        serverUrl: "http://sonarqube:9000"
+        credentialsId: ""

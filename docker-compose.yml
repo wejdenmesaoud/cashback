@@ -84,13 +84,13 @@ services:
       dockerfile: Dockerfile.jenkins
     container_name: casecashback-jenkins
     ports:
-      - "8081:8080"
+      - "8083:8080"
       - "50000:50000"
     environment:
       - JENKINS_OPTS=--httpPort=8080
       - JAVA_OPTS=-Djenkins.install.runSetupWizard=false -Dcasc.reload.token=admin
     volumes:
-      - jenkins-data:/var/jenkins_home
+      - jenkins_home_new:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
       - ./:/workspace:ro
     networks:
@@ -157,3 +157,5 @@ volumes:
   jenkins-data:
   prometheus-data:
   grafana-data:
+  jenkins_home_new:
+    external: true
