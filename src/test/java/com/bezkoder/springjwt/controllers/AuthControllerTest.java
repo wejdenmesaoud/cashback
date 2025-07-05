@@ -1,5 +1,6 @@
 package com.bezkoder.springjwt.controllers;
 
+import com.bezkoder.springjwt.config.MetricsConfig;
 import com.bezkoder.springjwt.models.ERole;
 import com.bezkoder.springjwt.models.Role;
 import com.bezkoder.springjwt.models.User;
@@ -11,7 +12,9 @@ import com.bezkoder.springjwt.repository.RoleRepository;
 import com.bezkoder.springjwt.repository.UserRepository;
 import com.bezkoder.springjwt.security.jwt.JwtUtils;
 import com.bezkoder.springjwt.security.services.UserDetailsImpl;
-import com.fasterxml.jackson.databind.ObjectMapper;
+
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Timer;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,6 +60,22 @@ public class AuthControllerTest {
     @Mock
     private Authentication authentication;
 
+    // Mock metrics beans
+    @Mock
+    private MetricsConfig metricsConfig;
+
+    @Mock
+    private Counter loginSuccessCounter;
+
+    @Mock
+    private Counter loginFailureCounter;
+
+    @Mock
+    private Counter userRegistrationCounter;
+
+    @Mock
+    private Timer authenticationTimer;
+
     @InjectMocks
     private AuthController authController;
 
@@ -93,6 +112,10 @@ public class AuthControllerTest {
         assertEquals(1L, jwtResponse.getId());
         assertEquals("testuser", jwtResponse.getUsername());
         assertEquals("test@example.com", jwtResponse.getEmail());
+        
+        // Verify metrics were called
+        verify(loginSuccessCounter, times(1)).increment();
+        verify(metricsConfig, times(1)).trackUserActivity("testuser");
     }
 
     @Test
@@ -127,6 +150,7 @@ public class AuthControllerTest {
         MessageResponse messageResponse = (MessageResponse) response.getBody();
         assertEquals("User registered successfully!", messageResponse.getMessage());
         verify(userRepository, times(1)).save(any(User.class));
+        verify(userRegistrationCounter, times(1)).increment();
     }
 
     @Test
@@ -173,4 +197,4 @@ public class AuthControllerTest {
         assertEquals("Error: Email is already in use!", messageResponse.getMessage());
         verify(userRepository, never()).save(any(User.class));
     }
-} 
+}
