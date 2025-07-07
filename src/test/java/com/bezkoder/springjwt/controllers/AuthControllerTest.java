@@ -11,6 +11,7 @@ import com.bezkoder.springjwt.repository.RoleRepository;
 import com.bezkoder.springjwt.repository.UserRepository;
 import com.bezkoder.springjwt.security.jwt.JwtUtils;
 import com.bezkoder.springjwt.security.services.UserDetailsImpl;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -172,4 +173,4 @@ public class AuthControllerTest {
         assertEquals("Error: Email is already in use!", messageResponse.getMessage());
         verify(userRepository, never()).save(any(User.class));
     }
-}
+} 

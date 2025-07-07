@@ -20,8 +20,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.Timer;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -29,7 +27,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-import com.bezkoder.springjwt.config.MetricsConfig;
 import com.bezkoder.springjwt.models.ERole;
 import com.bezkoder.springjwt.models.Role;
 import com.bezkoder.springjwt.models.User;
@@ -62,21 +59,6 @@ public class AuthController {
   @Autowired
   JwtUtils jwtUtils;
 
-  @Autowired
-  private MetricsConfig metricsConfig;
-
-  @Autowired
-  private Counter loginSuccessCounter;
-
-  @Autowired
-  private Counter loginFailureCounter;
-
-  @Autowired
-  private Counter userRegistrationCounter;
-
-  @Autowired
-  private Timer authenticationTimer;
-
   @Operation(summary = "Authenticate user", description = "Sign in a user and return a JWT token")
   @ApiResponses(value = {
       @ApiResponse(responseCode = "200", description = "Successfully authenticated",
@@ -85,47 +67,23 @@ public class AuthController {
   })
   @PostMapping("/signin")
   public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
-    Timer.Sample sample = Timer.start();
-    
-    try {
-      Authentication authentication = authenticationManager.authenticate(
-          new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
 
-      SecurityContextHolder.getContext().setAuthentication(authentication);
-      String jwt = jwtUtils.generateJwtToken(authentication);
+    Authentication authentication = authenticationManager.authenticate(
+        new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
 
-      UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-      List<String> roles = userDetails.getAuthorities().stream()
-          .map(item -> item.getAuthority())
-          .collect(Collectors.toList());
+    SecurityContextHolder.getContext().setAuthentication(authentication);
+    String jwt = jwtUtils.generateJwtToken(authentication);
 
-      // Increment metrics for successful login (null-safe for testing)
-      if (loginSuccessCounter != null) {
-        loginSuccessCounter.increment();
-      }
-      // Track user activity with timestamp instead of simple increment
-      if (metricsConfig != null) {
-        metricsConfig.trackUserActivity(userDetails.getUsername());
-      }
-      if (authenticationTimer != null) {
-        sample.stop(authenticationTimer);
-      }
+    UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+    List<String> roles = userDetails.getAuthorities().stream()
+        .map(item -> item.getAuthority())
+        .collect(Collectors.toList());
 
-      return ResponseEntity.ok(new JwtResponse(jwt,
-                           userDetails.getId(),
-                           userDetails.getUsername(),
-                           userDetails.getEmail(),
-                           roles));
-    } catch (Exception e) {
-      // Increment metrics for failed login (null-safe for testing)
-      if (loginFailureCounter != null) {
-        loginFailureCounter.increment();
-      }
-      if (authenticationTimer != null) {
-        sample.stop(authenticationTimer);
-      }
-      throw e;
-    }
+    return ResponseEntity.ok(new JwtResponse(jwt,
+                         userDetails.getId(),
+                         userDetails.getUsername(),
+                         userDetails.getEmail(),
+                         roles));
   }
 
 
@@ -191,28 +149,6 @@ public class AuthController {
     user.setRoles(roles);
     userRepository.save(user);
 
-    // Increment user registration metric (null-safe for testing)
-    if (userRegistrationCounter != null) {
-      userRegistrationCounter.increment();
-    }
-
     return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
-  }
-
-  @Operation(summary = "Sign out user", description = "Sign out the current user and decrement active users")
-  @ApiResponses(value = {
-      @ApiResponse(responseCode = "200", description = "Successfully signed out")
-  })
-  @PostMapping("/signout")
-  public ResponseEntity<?> logoutUser() {
-    // Decrement active users when user logs out (null-safe for testing)
-    if (metricsConfig != null) {
-      metricsConfig.decrementActiveUsers();
-    }
-    
-    // Clear the security context
-    SecurityContextHolder.clearContext();
-    
-    return ResponseEntity.ok(new MessageResponse("User signed out successfully!"));
   }
 }
